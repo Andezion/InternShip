@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define MESSAGE_SIZE 1024
+
 void buffer(void)
 {
     int c;
@@ -24,8 +26,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in server_address;
 
     char ip_address[15];
-    char message_from_client[1024];
-    char message_to_client[1024];
+    char message_from_client[MESSAGE_SIZE];
+    char message_to_client[MESSAGE_SIZE];
 
     const int socket_number = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_number == -1)
@@ -86,7 +88,7 @@ int main(int argc, char *argv[])
         }
         message_to_client[received] = '\0';
 
-        fprintf("Server reply is: %s and it has %d bytes!\n", message_to_client, received);
+        fprintf(stdout,"Server reply is: %s and it has %d bytes!\n", message_to_client, received);
 
         if (strcmp(message_from_client, "exit\n") == 0)
         {
