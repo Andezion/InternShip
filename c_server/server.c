@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <stdbool.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -80,6 +81,95 @@ int main(void)
 
     fprintf(stdout, "Server is working on port: %d\n", port);
 
+    while (true)
+    {
+        read_fds = all_fds;
+
+        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) < 0)
+        {
+            fprintf(stderr, "Failed to select on socket.\n");
+            close(server_fd);
+
+            break;
+        }
+
+        if (FD_ISSET(server_fd, &read_fds))
+        {
+            new_fd = accept(server_fd, (struct sockaddr *) & client_address, &address_length);
+            if (new_fd < 0)
+            {
+                fprintf(stderr, "Failed to accept connection.\n");
+                continue;
+            }
+
+            fprintf(stdout, "New connection from %s: %d", inet_ntoa(client_address.sin_addr),
+                ntohs(client_address.sin_port));
+
+            int i = 0;
+            for (i = 0; i < FD_SETSIZE; i++)
+            {
+                if (client_sockets[i] == -1)
+                {
+                    client_sockets[i] = new_fd;
+                    break;
+                }
+            }
+
+            if (i == FD_SETSIZE)
+            {
+                fprintf(stderr, "Too many connections.\n");
+                close(new_fd);
+
+                continue;
+            }
+
+            FD_SET(new_fd, &all_fds);
+            if (new_fd > max_fd)
+            {
+                max_fd = new_fd;
+            }
+        }
+
+        for (int i = 0; i < FD_SETSIZE; i++)
+        {
+            int sock = client_sockets[i];
+            if (sock < 0)
+            {
+                continue;
+            }
+
+            if (FD_ISSET(sock, &read_fds))
+            {
+                ssize_t bytes = recv(sock, buffer, BUFFER_SIZE - 1, 0);
+                if (bytes <= 0)
+                {
+                    fprintf(stderr, "Client on socket %d disconnected!\n", sock);
+
+                    close(sock);
+                    FD_CLR(sock, &all_fds);
+
+                    client_sockets[i] = 1;
+                }
+                else
+                {
+                    buffer[bytes] = '\0';
+
+                    fprintf(stderr, "Message from client %d: %s.\n", sock, buffer);
+
+                    for (int j = 0; j < FD_SETSIZE; j++)
+                    {
+                        int other = client_sockets[j];
+                        if (other >= 0 && other != sock)
+                        {
+                            send(other, buffer, bytes, 0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    close(server_fd);
     return 0;
 }
 
