@@ -1,0 +1,13 @@
+# C
+c_server/*.o
+c_server/a.out
+
+# C++
+cpp_server/build/
+cpp_server/*.o
+cpp_server/*.exe
+
+# Rust
+rust_server/target/
+rust_project/Cargo.lock
+
