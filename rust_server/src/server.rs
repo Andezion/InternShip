@@ -24,6 +24,25 @@ fn handle_client(mut tcp_stream: TcpStream)
 
 fn main()
 {
+    let listener = TcpListener::bind("0.0.0.0:8080").expect("Error while binding");
+    println!("Server is listening on port {}", 8080);
     
+    for stream in listener.incoming()
+    {
+        match stream
+        {
+            Ok(stream) =>
+                {
+                    println!("New connection: {}", stream.peer_addr().expect("Error at new connection"));
+                    thread::spawn(move || { handle_client(stream) });
+                }
+            Err(e) =>
+                {
+                    println!("Error: {}", e);
+                    // TODO - handle connection failed
+                }
+        }
+    }
+    drop(listener);
     return;
 }
