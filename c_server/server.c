@@ -43,8 +43,67 @@ int main(void)
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         fprintf(stderr, "Failed to create a socket.\n");
+        exit(EXIT_FAILURE); // TODO - change it with enum to have described errors
+    }
+
+    memset(&server_address, 0, sizeof(server_address));
+
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(port);
+
+    if (bind(server_fd, (struct sockaddr *) & server_address, sizeof(server_address)) < 0)
+    {
+        fprintf(stderr, "Failed to bind a socket.\n");
+        close(server_fd);
+
         exit(EXIT_FAILURE);
     }
 
+    if (listen(server_fd, 10) < 0)
+    {
+        fprintf(stderr, "Failed to listen on socket.\n");
+        close(server_fd);
+
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < FD_SETSIZE; i++)
+    {
+        client_sockets[i] = -1;
+    }
+
+    FD_ZERO(&all_fds);
+    FD_SET(server_fd, &all_fds);
+
+    max_fd = server_fd;
+
+    fprintf(stdout, "Server is working on port: %d\n", port);
+
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
